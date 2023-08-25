@@ -1,0 +1,3 @@
+#!/bin/sh -e
+
+GOCOVERDIR=/tmp/profile exec /usr/local/bin/percona-server-mongodb-operator

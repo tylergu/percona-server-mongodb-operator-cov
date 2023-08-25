@@ -1,4 +1,4 @@
-FROM golang:1.17 AS go_builder
+FROM golang:1.20 AS go_builder
 WORKDIR /go/src/github.com/percona/percona-server-mongodb-operator
 
 COPY . .
@@ -13,7 +13,7 @@ ARG CGO_ENABLED=0
 RUN mkdir -p build/_output/bin \
     && GOOS=$GOOS GOARCH=$GOARCH CGO_ENABLED=$CGO_ENABLED GO_LDFLAGS=$GO_LDFLAGS \
        go build -mod=vendor -ldflags "-w -s -X main.GitCommit=$GIT_COMMIT -X main.GitBranch=$GIT_BRANCH" \
-           -o build/_output/bin/percona-server-mongodb-operator \
+           -cover -covermode=set -coverpkg=./... -o build/_output/bin/percona-server-mongodb-operator \
                cmd/manager/main.go \
     && cp -r build/_output/bin/percona-server-mongodb-operator /usr/local/bin/percona-server-mongodb-operator \
     && GOOS=$GOOS GOARCH=$GOARCH CGO_ENABLED=$CGO_ENABLED GO_LDFLAGS=$GO_LDFLAGS \
@@ -43,7 +43,10 @@ COPY LICENSE /licenses/
 COPY --from=go_builder /usr/local/bin/mongodb-healthcheck /mongodb-healthcheck
 COPY build/init-entrypoint.sh /init-entrypoint.sh
 COPY build/ps-entry.sh /ps-entry.sh
+COPY --chmod=777 build/entrypoint /entrypoint
 # Mozilla licensed source code should be included
 COPY vendor/github.com/hashicorp /lib
 
-USER 2
+USER 0:0
+
+ENTRYPOINT ["/entrypoint"]
